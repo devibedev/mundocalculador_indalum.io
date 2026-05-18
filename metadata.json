@@ -1,0 +1,8 @@
+{
+  "name": "Remix: Indalum Tool",
+  "description": "Calculadora de despiece y catálogo técnico para la fabricación de aluminio.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

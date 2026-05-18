@@ -1,0 +1,118 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 1. Primitive Helpers
+    function isSignedIn() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // 2. Validation Blueprints
+    function isValidPrice(data) {
+      return data.keys().hasAll(['unitPrice', 'type']) 
+          && data.keys().size() <= 3
+          && data.unitPrice is number 
+          && data.unitPrice >= 0
+          && data.type is string
+          && (data.type == 'unit' || data.type == 'meter')
+          && (!data.keys().contains('lastUpdated') || data.lastUpdated is string);
+    }
+
+    function isValidCartItem(data) {
+      return data.keys().hasAll(['codigo', 'nombre', 'cantidad', 'total'])
+          && data.codigo is string && data.codigo.size() <= 64
+          && data.nombre is string && data.nombre.size() <= 128
+          && data.cantidad is number && data.cantidad > 0
+          && data.total is number && data.total >= 0
+          && (!data.keys().contains('metros') || data.metros == null || data.metros is number)
+          && (!data.keys().contains('esPorMetro') || data.esPorMetro is bool)
+          && (!data.keys().contains('precioUnitario') || data.precioUnitario is number)
+          && (!data.keys().contains('tipo') || data.tipo is string);
+    }
+
+    function isValidProject(data) {
+      return data.keys().hasAll(['nombre', 'fecha', 'items', 'total'])
+          && data.nombre is string && data.nombre.size() <= 128
+          && data.fecha is string
+          && data.items is list
+          && data.items.size() <= 100
+          && data.total is number && data.total >= 0;
+    }
+
+    function isValidAppNote(data) {
+      return data.keys().hasAll(['content', 'fecha'])
+          && data.content is string && data.content.size() <= 5000
+          && data.fecha is string;
+    }
+
+    function isValidCalculationHistory(data) {
+      return data.keys().hasAll(['fecha', 'serie', 'config', 'width', 'height'])
+          && data.fecha is string
+          && data.serie is string
+          && data.config is string
+          && data.width is number
+          && data.height is number;
+    }
+
+    // 3. Collection Rules
+    match /users/{userId} {
+      match /prices/{productCode} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidPrice(incoming()) && isValidId(productCode);
+        allow update: if isOwner(userId) && isValidPrice(incoming()) 
+                     && incoming().diff(existing()).affectedKeys().hasOnly(['unitPrice', 'type', 'lastUpdated']);
+        allow delete: if isOwner(userId);
+      }
+
+      match /projects/{projectId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidProject(incoming()) && isValidId(projectId);
+        allow update: if isOwner(userId) && isValidProject(incoming())
+                     && incoming().diff(existing()).affectedKeys().hasOnly(['nombre', 'items', 'total']);
+        allow delete: if isOwner(userId);
+      }
+
+      match /notes/{noteId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidAppNote(incoming()) && isValidId(noteId);
+        allow update: if isOwner(userId) && isValidAppNote(incoming())
+                     && incoming().diff(existing()).affectedKeys().hasOnly(['content']);
+        allow delete: if isOwner(userId);
+      }
+
+      match /history/{historyId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidCalculationHistory(incoming()) && isValidId(historyId);
+        allow delete: if isOwner(userId);
+      }
+
+      match /cart/{cartItemId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidCartItem(incoming()) && isValidId(cartItemId);
+        allow update: if isOwner(userId) && isValidCartItem(incoming())
+                     && incoming().diff(existing()).affectedKeys().hasOnly(['cantidad', 'total', 'metros']);
+        allow delete: if isOwner(userId);
+      }
+    }
+  }
+}
