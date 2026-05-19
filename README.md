@@ -85,7 +85,19 @@ Si no configuras Firebase, la aplicación funcionará perfectamente usando el `l
 
 ---
 
-## 📝 Notas del Desarrollador
-- La aplicación usa **Vite** para un desarrollo ultra rápido.
-- El diseño es **Mobile-First**, optimizado para usarse en el taller desde un celular.
-- Los estilos están basados en **Tailwind CSS**.
+## 📋 Reglas de Construcción y Solución de Problemas
+
+Si el comando `npm run build` falla, verifica lo siguiente:
+
+1. **Rutas Relativas**: Asegúrate de que `vite.config.ts` tenga `base: './'`. Esto ya está configurado en este proyecto.
+2. **Variables de Entorno**: Si usas Gemini AI, GitHub Actions necesitará el secreto `GEMINI_API_KEY` configurado en los ajustes de tu repositorio (Settings > Secrets and variables > Actions).
+3. **Errores de TypeScript**: Si quieres ignorar errores de tipo durante la construcción, puedes cambiar el script de build en `package.json` a `"build": "vite build"`.
+4. **Permisos de Archivos**: En Linux/macOS, asegúrate de tener permisos de escritura en la carpeta del proyecto.
+
+### Comando de limpieza total
+Si nada funciona, intenta limpiar el cache y reinstalar:
+```bash
+rm -rf node_modules dist
+npm install
+npm run build
+```
