@@ -52,6 +52,8 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true # Recomendado para evitar avisos de obsolescencia
     steps:
       - name: Checkout
         uses: actions/checkout@v4
