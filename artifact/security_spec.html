@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Security Specification - MundoCanceles PRO | mundocalculador_indalum.io</title>
+<meta name="generator" content="Jekyll v3.10.0" />
+<meta property="og:title" content="Security Specification - MundoCanceles PRO" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="herramienta para despiece de ventanas indalum" />
+<meta property="og:description" content="herramienta para despiece de ventanas indalum" />
+<link rel="canonical" href="https://devibedev.github.io/mundocalculador_indalum.io/security_spec.html" />
+<meta property="og:url" content="https://devibedev.github.io/mundocalculador_indalum.io/security_spec.html" />
+<meta property="og:site_name" content="mundocalculador_indalum.io" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Security Specification - MundoCanceles PRO" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage","description":"herramienta para despiece de ventanas indalum","headline":"Security Specification - MundoCanceles PRO","url":"https://devibedev.github.io/mundocalculador_indalum.io/security_spec.html"}</script>
+<!-- End Jekyll SEO tag -->
+
+    <link rel="stylesheet" href="/mundocalculador_indalum.io/assets/css/style.css?v=12ff99abac44f83134a458dc75bcf09b400a091b">
+    <!-- start custom head snippets, customize with your own _includes/head-custom.html file -->
+
+<!-- Setup Google Analytics -->
+
+
+
+<!-- You can set your favicon here -->
+<!-- link rel="shortcut icon" type="image/x-icon" href="/mundocalculador_indalum.io/favicon.ico" -->
+
+<!-- end custom head snippets -->
+
+  </head>
+  <body>
+    <div class="container-lg px-3 my-5 markdown-body">
+      
+      <h1><a href="https://devibedev.github.io/mundocalculador_indalum.io/">mundocalculador_indalum.io</a></h1>
+      
+
+      <h1 id="security-specification---mundocanceles-pro">Security Specification - MundoCanceles PRO</h1>
+
+<h2 id="data-invariants">Data Invariants</h2>
+<ol>
+  <li>A user can only access their own prices, projects, notes, history, and cart items.</li>
+  <li>Prices and project totals must be non-negative.</li>
+  <li>Created timestamps (if any) must be validated against <code class="language-plaintext highlighter-rouge">request.time</code>.</li>
+  <li>Document IDs must be within acceptable size limits (&lt;= 128 chars).</li>
+</ol>
+
+<h2 id="dirty-dozen-payloads-rejection-targets">Dirty Dozen Payloads (Rejection Targets)</h2>
+<ol>
+  <li><strong>Malicious Price Update</strong>: <code class="language-plaintext highlighter-rouge">{ "unitPrice": -10.0, "type": "meter" }</code> (Negative price)</li>
+  <li><strong>Identity Spoofing (Price)</strong>: Write to <code class="language-plaintext highlighter-rouge">/users/VICTIM_ID/prices/1677</code> as <code class="language-plaintext highlighter-rouge">ATTACKER_ID</code>.</li>
+  <li><strong>Ghost Field (Project)</strong>: <code class="language-plaintext highlighter-rouge">{ "nombre": "P1", "fecha": "2023-01-01", "items": [], "total": 100, "isVerified": true }</code> (Unknown field)</li>
+  <li><strong>Invalid Type (CartItem)</strong>: <code class="language-plaintext highlighter-rouge">{ "codigo": "C1", "cantidad": "LOTS", ... }</code> (Quantity as string)</li>
+  <li><strong>PII Blanket Read</strong>: Authenticated user attempts <code class="language-plaintext highlighter-rouge">list</code> on <code class="language-plaintext highlighter-rouge">/users/VICTIM_ID/notes</code>.</li>
+  <li><strong>Self-Assigned Admin</strong>: Attempt to write to <code class="language-plaintext highlighter-rouge">/admins/ATTACKER_ID</code>.</li>
+  <li><strong>Resource Poisoning (Note)</strong>: Large content string (over limit).</li>
+  <li><strong>Orphaned Project</strong>: Create project with non-existent userId in path (managed by wildcard match).</li>
+  <li><strong>State Shortcut</strong>: (Not highly applicable here, but maybe status if added).</li>
+  <li><strong>Timestamp Fraud</strong>: <code class="language-plaintext highlighter-rouge">{ "fecha": "2999-01-01" }</code> for history if server time is required.</li>
+  <li><strong>ID Poisoning</strong>: Document ID with junk characters.</li>
+  <li><strong>Update Gap</strong>: Partial update to Price missing required fields (if not whitelisted in hasOnly).</li>
+</ol>
+
+<h2 id="test-runner-draft">Test Runner (Draft)</h2>
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// firestore.rules.test.ts</span>
+<span class="c1">// This file would contain unit tests using @firebase/rules-unit-testing</span>
+<span class="c1">// verifying the above scenarios return PERMISSION_DENIED.</span>
+</code></pre></div></div>
+
+
+      
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/anchor-js/4.1.0/anchor.min.js" integrity="sha256-lZaRhKri35AyJSypXXs4o6OPFTbTmUoltBbDCbdzegg=" crossorigin="anonymous"></script>
+    <script>anchors.add();</script>
+  </body>
+</html>
