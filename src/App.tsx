@@ -40,8 +40,6 @@ import {
 
 import { AppProvider, useApp } from './context/AppContext';
 import { motion, AnimatePresence } from 'motion/react';
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
 
 type ViewType = 'catalog' | 'calculator' | 'materials' | 'prices' | 'notes';
 
@@ -477,9 +475,14 @@ const CalculatorView = () => {
 
   const total = cart.reduce((acc, curr) => acc + curr.total, 0);
 
-  const exportToPDF = () => {
+  const exportToPDF = async () => {
     if (cart.length === 0) return;
 
+    const [{ jsPDF }, autoTableModule] = await Promise.all([
+      import('jspdf'),
+      import('jspdf-autotable')
+    ]);
+    const autoTable = autoTableModule.default;
     const doc = new jsPDF();
     const date = new Date().toLocaleDateString();
     
@@ -905,9 +908,14 @@ const MaterialsView = () => {
 
   const total = cart.reduce((acc, curr) => acc + curr.total, 0);
 
-  const exportMaterialsPDF = () => {
+  const exportMaterialsPDF = async () => {
     if (cart.length === 0) return;
 
+    const [{ jsPDF }, autoTableModule] = await Promise.all([
+      import('jspdf'),
+      import('jspdf-autotable')
+    ]);
+    const autoTable = autoTableModule.default;
     const doc = new jsPDF();
     const date = new Date().toLocaleDateString();
     
