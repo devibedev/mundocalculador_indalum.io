@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3001:80"
+    environment:
+      - NODE_ENV=production
+    restart: always
+
+# Nota: Este archivo está preparado para despliegues locales o externos.
+# En AI Studio, la aplicación corre automáticamente en el puerto 3000.

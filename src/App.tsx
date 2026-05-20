@@ -35,13 +35,12 @@ import {
   Info,
   Package,
   Boxes,
-  PlusCircle
+  PlusCircle,
+  CloudCheck
 } from 'lucide-react';
 
 import { AppProvider, useApp } from './context/AppContext';
 import { motion, AnimatePresence } from 'motion/react';
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
 
 type ViewType = 'catalog' | 'calculator' | 'materials' | 'prices' | 'notes';
 
@@ -83,10 +82,30 @@ const AuthButton = () => {
 };
 
 const Layout: React.FC<{ children: React.ReactNode, currentView: ViewType, setView: (v: ViewType) => void }> = ({ children, currentView, setView }) => {
-  const { darkMode, toggleDarkMode } = useApp();
+  const { darkMode, toggleDarkMode, lastDraftSave, error, setError } = useApp();
 
   return (
     <div className="min-h-screen pb-24 flex flex-col items-center">
+      {/* Error Banner */}
+      <AnimatePresence>
+        {error && (
+          <motion.div 
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="w-full bg-red-600 text-white text-[10px] font-bold uppercase py-2 px-6 flex justify-between items-center z-[100]"
+          >
+            <div className="flex items-center gap-2">
+              <AlertTriangle size={14} />
+              <span>ERROR DEL SISTEMA: {error}</span>
+            </div>
+            <button onClick={() => setError(null)} className="hover:opacity-70">
+              <X size={14} />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Top Bar */}
       <header className="w-full sticky top-0 bg-surface border-b border-primary z-50 py-3 px-6 flex justify-between items-center shadow-sm">
         <div className="flex items-center gap-3">
@@ -113,6 +132,23 @@ const Layout: React.FC<{ children: React.ReactNode, currentView: ViewType, setVi
           <div className="text-[10px] font-mono border border-primary px-1 opacity-50 hidden sm:block">V1.3.00</div>
         </div>
       </header>
+
+      {/* Auto-save bit */}
+      <AnimatePresence>
+        {lastDraftSave && (
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            key={lastDraftSave}
+            className="fixed top-20 right-4 z-[60] pointer-events-none"
+          >
+            <div className="bg-primary/10 backdrop-blur-sm border border-primary/20 px-2 py-1 rounded text-[8px] font-bold uppercase flex items-center gap-1.5 text-primary/60">
+              <CloudCheck size={10} /> Borrador guardado {new Date(lastDraftSave).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <main className="w-full max-w-lg px-4 pt-6 flex-1">
         {children}
@@ -349,7 +385,7 @@ const CatalogView = () => {
 };
 
 const CalculatorView = () => {
-  const { products, addToCart, cart, removeFromCart, saveProject, projects, loadProject, performDespiece, history, saveToHistory } = useApp();
+  const { products, addToCart, cart, removeFromCart, saveProject, projects, loadProject, performDespiece, history, saveToHistory, setError } = useApp();
   const [serie, setSerie] = useState('');
   const [config, setConfig] = useState('X-O');
   const [width, setWidth] = useState('');
@@ -477,10 +513,16 @@ const CalculatorView = () => {
 
   const total = cart.reduce((acc, curr) => acc + curr.total, 0);
 
-  const exportToPDF = () => {
+  const exportToPDF = async () => {
     if (cart.length === 0) return;
 
-    const doc = new jsPDF();
+    try {
+      const [{ jsPDF }, { default: autoTable }] = await Promise.all([
+        import('jspdf'),
+        import('jspdf-autotable')
+      ]);
+
+      const doc = new jsPDF();
     const date = new Date().toLocaleDateString();
     
     // Header
@@ -543,6 +585,10 @@ const CalculatorView = () => {
     doc.text('  Los precios y despieces deben ser validados físicamente.', 14, finalY + 20);
 
     doc.save(`Presupuesto_${projName || 'MundoCanceles'}_${date.replace(/\//g, '-')}.pdf`);
+    } catch (err) {
+      console.error("PDF Export failed:", err);
+      setError("Error al generar el PDF. Intente de nuevo.");
+    }
   };
 
   return (
@@ -898,17 +944,23 @@ const CalculatorView = () => {
 };
 
 const MaterialsView = () => {
-  const { cart, products, prices, addToCart, removeFromCart } = useApp();
+  const { cart, products, prices, addToCart, removeFromCart, setError } = useApp();
   const [selectedProduct, setSelectedProduct] = useState('');
   const [manualQty, setManualQty] = useState('1');
   const [search, setSearch] = useState('');
 
   const total = cart.reduce((acc, curr) => acc + curr.total, 0);
 
-  const exportMaterialsPDF = () => {
+  const exportMaterialsPDF = async () => {
     if (cart.length === 0) return;
 
-    const doc = new jsPDF();
+    try {
+      const [{ jsPDF }, { default: autoTable }] = await Promise.all([
+        import('jspdf'),
+        import('jspdf-autotable')
+      ]);
+
+      const doc = new jsPDF();
     const date = new Date().toLocaleDateString();
     
     doc.setFontSize(20);
@@ -938,6 +990,10 @@ const MaterialsView = () => {
     doc.text(`COSTO TOTAL ESTIMADO: $${total.toFixed(2)}`, 196, finalY, { align: 'right' });
 
     doc.save(`Materiales_${date}.pdf`);
+    } catch (err) {
+      console.error("BOM Export failed:", err);
+      setError("Error al generar el listado de materiales.");
+    }
   };
 
   const filteredProducts = products.filter(p => 

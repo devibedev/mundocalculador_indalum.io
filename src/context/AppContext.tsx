@@ -22,6 +22,8 @@ interface AppContextType {
   projects: Project[];
   notes: AppNote[];
   history: CalculationHistory[];
+  lastDraftSave: string | null;
+  error: string | null;
   darkMode: boolean;
   user: User | null;
   authLoading: boolean;
@@ -29,6 +31,7 @@ interface AppContextType {
   signIn: () => Promise<void>;
   logout: () => Promise<void>;
   toggleDarkMode: () => void;
+  setError: (msg: string | null) => void;
   updatePrice: (codigo: string, unitPrice: number, type: 'unit' | 'meter') => void;
   addToCart: (item: Partial<CartItem>) => void;
   removeFromCart: (id: string) => void;
@@ -48,6 +51,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [projects, setProjects] = useState<Project[]>([]);
   const [notes, setNotes] = useState<AppNote[]>([]);
   const [history, setHistory] = useState<CalculationHistory[]>([]);
+  const [lastDraftSave, setLastDraftSave] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [darkMode, setDarkMode] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -58,7 +63,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     PROJECTS: 'mundocanceles_projects',
     NOTES: 'mundocanceles_notes',
     HISTORY: 'mundocanceles_history',
-    CART: 'mundocanceles_cart'
+    CART: 'mundocanceles_cart',
+    DRAFT: 'mundocanceles_draft'
   };
 
   // Initial connection test
@@ -80,6 +86,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     const savedCart = localStorage.getItem(STORAGE_KEYS.CART);
     if (savedCart) setCart(JSON.parse(savedCart));
+
+    const savedDraft = localStorage.getItem(STORAGE_KEYS.DRAFT);
+    if (savedDraft) {
+      const parsedDraft = JSON.parse(savedDraft);
+      setLastDraftSave(parsedDraft.savedAt);
+    }
 
     const savedTheme = localStorage.getItem('mundocanceles_theme');
     if (savedTheme === 'dark') setDarkMode(true);
@@ -138,6 +150,24 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       localStorage.setItem(STORAGE_KEYS.CART, JSON.stringify(cart));
     }
   }, [cart, user]);
+
+  // Auto-save drafts every 2 minutes
+  useEffect(() => {
+    const autoSaveInterval = setInterval(() => {
+      if (cart.length > 0) {
+        const draftData = {
+          items: cart,
+          savedAt: new Date().toISOString(),
+          total: cart.reduce((acc, curr) => acc + curr.total, 0)
+        };
+        localStorage.setItem(STORAGE_KEYS.DRAFT, JSON.stringify(draftData));
+        setLastDraftSave(draftData.savedAt);
+        console.log('Automated draft save at:', new Date().toLocaleTimeString());
+      }
+    }, 120000); // 2 minutes
+
+    return () => clearInterval(autoSaveInterval);
+  }, [cart]);
 
   // Firebase Real-time Sync
   useEffect(() => {
@@ -405,12 +435,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       projects,
       notes,
       history,
+      lastDraftSave,
+      error,
       darkMode,
       user,
       authLoading,
       signIn,
       logout,
       toggleDarkMode,
+      setError,
       isAuthEnabled: !!auth,
       updatePrice,
       addToCart,
