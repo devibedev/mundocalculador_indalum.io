@@ -1136,7 +1136,7 @@ const MaterialsView = () => {
 };
 
 const PricesView = () => {
-  const { products, prices, updatePrice } = useApp();
+  const { products, prices, updatePrice, setError } = useApp();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'all' | 'perfil' | 'herraje' | 'vidrio' | 'insumo'>('all');
 
@@ -1189,9 +1189,19 @@ const PricesView = () => {
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold">$</span>
                   <input 
                     type="number" 
+                    min="0"
+                    step="0.01"
                     className="sketch-input w-full pl-6 py-1 text-sm font-mono"
                     defaultValue={info.unitPrice || ''}
-                    onBlur={(e) => updatePrice(p.codigo, parseFloat(e.target.value) || 0, info.type)}
+                    onBlur={(e) => {
+                      const val = parseFloat(e.target.value);
+                      if (val < 0) {
+                        setError("El precio no puede ser negativo");
+                        e.target.value = info.unitPrice.toString();
+                        return;
+                      }
+                      updatePrice(p.codigo, val || 0, info.type);
+                    }}
                   />
                 </div>
                 <select 
