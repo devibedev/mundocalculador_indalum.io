@@ -19,7 +19,7 @@ import {
   Trash2, 
   Plus, 
   Save as SaveIcon, 
-  Download, 
+  Download,
   X,
   ChevronRight,
   ChevronDown,
@@ -38,11 +38,39 @@ import {
   PlusCircle,
   CloudCheck
 } from 'lucide-react';
+import { EJEMPLO_MUNDOCANCELES_3900 } from './data/ejemplos/mundoCanceles3900';
 
 import { AppProvider, useApp } from './context/AppContext';
 import { motion, AnimatePresence } from 'motion/react';
+import { useLinea } from './contexts/LineaContext';
+import { useProyecto } from './contexts/ProyectoContext';
+import { BotonesExportacion } from './components/exportacion/BotonesExportacion';
+import { ProyectoSelector } from './components/proyecto/ProyectoSelector';
 
-type ViewType = 'catalog' | 'calculator' | 'materials' | 'prices' | 'notes';
+type ViewType = 'catalog' | 'calculator' | 'materials' | 'prices' | 'notes' | 'projects';
+
+const LineaSelector = () => {
+  const { getLineasActivas, lineaActual, cambiarLinea } = useLinea();
+  const lineas = getLineasActivas();
+
+  if (!lineas.length) return null;
+
+  return (
+    <div className="flex items-center gap-2">
+      {lineas.map((l) => (
+        <button
+          key={l.id}
+          onClick={() => cambiarLinea(l.id)}
+          className={`text-[10px] font-bold uppercase px-2 py-1 border border-primary rounded ${
+            lineaActual === l.id ? 'bg-primary text-white' : 'bg-transparent opacity-60'
+          }`}
+        >
+          {l.icono} {l.nombre}
+        </button>
+      ))}
+    </div>
+  );
+};
 
 const AuthButton = () => {
   const { user, signIn, logout, authLoading, isAuthEnabled } = useApp();
@@ -122,6 +150,7 @@ const Layout: React.FC<{ children: React.ReactNode, currentView: ViewType, setVi
           </div>
         </div>
         <div className="flex items-center gap-2 md:gap-3">
+          <LineaSelector />
           <AuthButton />
           <button 
             onClick={toggleDarkMode}
@@ -169,6 +198,7 @@ const Layout: React.FC<{ children: React.ReactNode, currentView: ViewType, setVi
           <NavButton active={currentView === 'materials'} icon={<Package />} label="Mat." onClick={() => setView('materials')} />
           <NavButton active={currentView === 'prices'} icon={<DollarSign />} label="Precios" onClick={() => setView('prices')} />
           <NavButton active={currentView === 'notes'} icon={<StickyNote />} label="Notas" onClick={() => setView('notes')} />
+          <NavButton active={currentView === 'projects'} icon={<ClipboardList />} label="Proyectos" onClick={() => setView('projects')} />
         </div>
       </nav>
     </div>
@@ -452,6 +482,16 @@ const CalculatorView = () => {
     validateInput('serie', val);
   };
 
+  const cargarEjemploMundoCanceles = () => {
+    setSerie(EJEMPLO_MUNDOCANCELES_3900.serie);
+    setConfig(EJEMPLO_MUNDOCANCELES_3900.config);
+    setWidth(String(EJEMPLO_MUNDOCANCELES_3900.ancho));
+    setHeight(String(EJEMPLO_MUNDOCANCELES_3900.alto));
+    setSelloAgua(String(EJEMPLO_MUNDOCANCELES_3900.selloAgua));
+    setProjName(EJEMPLO_MUNDOCANCELES_3900.nombre);
+    setInputErrors({});
+  };
+
   const handleWidthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setWidth(val);
@@ -603,6 +643,15 @@ const CalculatorView = () => {
           <div className="relative z-10">
             <h2 className="font-bold text-sm border-b border-primary pb-1 inline-block uppercase tracking-widest">// CÁLCULO TÉCNICO (MundoCanceles)</h2>
             <p className="text-[9px] opacity-40 font-mono mt-1 px-1 bg-primary/5">SISTEMA DINÁMICO DE DESCUENTOS Y DESPIECE ARQUITECTÓNICO</p>
+          </div>
+          
+          <div className="flex justify-end">
+            <button 
+              onClick={cargarEjemploMundoCanceles}
+              className="text-[10px] border border-primary/30 px-2 py-1 hover:bg-primary/5"
+            >
+              ⚡ Cargar ejemplo MundoCanceles
+            </button>
           </div>
           
           {despiece.alertas.length > 0 && (
@@ -1284,6 +1333,52 @@ const NotesView = () => {
   );
 };
 
+const ProjectsView = () => {
+  const { lineaActual, getLineaConfig } = useLinea();
+  const { proyectoActual } = useProyecto();
+  const config = getLineaConfig();
+
+  return (
+    <div className="space-y-6">
+      <div className="sketch-border p-5 bg-white space-y-4">
+        <div className="flex items-center gap-2 border-b border-primary/10 pb-2">
+          <ClipboardList size={18} />
+          <h2 className="font-bold text-sm uppercase tracking-widest">Proyectos</h2>
+        </div>
+        <ProyectoSelector />
+      </div>
+
+      {proyectoActual && (
+        <div className="sketch-border p-5 bg-white space-y-4">
+          <div className="flex justify-between items-start">
+            <div>
+              <h3 className="font-semibold text-lg">{proyectoActual.nombre}</h3>
+              <p className="text-sm opacity-70">Cliente: {proyectoActual.cliente.nombre}</p>
+              <p className="text-sm opacity-70">Items: {proyectoActual.items.length}</p>
+            </div>
+            <BotonesExportacion />
+          </div>
+
+          {proyectoActual.presupuesto && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <h4 className="font-semibold text-green-800 mb-2">Presupuesto</h4>
+              <p className="text-2xl font-bold text-green-700">
+                {config?.precios.moneda || '€'} {proyectoActual.presupuesto.total.toFixed(2)}
+              </p>
+              <p className="text-sm text-green-600 mt-1">
+                Subtotal: {config?.precios.moneda || '€'} {proyectoActual.presupuesto.subtotal.toFixed(2)}
+              </p>
+              <p className="text-sm text-green-600">
+                IVA: {config?.precios.moneda || '€'} {proyectoActual.presupuesto.iva.toFixed(2)}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const MainApp = () => {
   const [view, setView] = useState<ViewType>('catalog');
 
@@ -1316,6 +1411,7 @@ const MainApp = () => {
           {view === 'materials' && <MaterialsView />}
           {view === 'prices' && <PricesView />}
           {view === 'notes' && <NotesView />}
+          {view === 'projects' && <ProjectsView />}
         </motion.div>
       </AnimatePresence>
     </Layout>
