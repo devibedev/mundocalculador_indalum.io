@@ -222,7 +222,7 @@ export const ProyectoProvider: React.FC<{ children: ReactNode }> = ({ children }
       const calculadora = CalculadoraFactory.crear(lineaActual);
 
       const catalogo = await storage.getCatalogo(lineaActual);
-      calculadora.catalogo = catalogo ?? {};
+      calculadora.setCatalogo(catalogo ?? {});
 
       calculadora.setProyecto({
         items: proyectoActual.items,
@@ -281,9 +281,8 @@ export const ProyectoProvider: React.FC<{ children: ReactNode }> = ({ children }
       throw new Error('Proyecto o presupuesto no encontrado');
     }
 
-    const exportador = new ExportadorPDF(options);
-    const nombre = `presupuesto_${proyecto.nombre}_${proyecto.id}`.replace(/\s+/g, '_');
-    await exportador.descargar(nombre);
+    const exportador = new ExportadorPDF();
+    await exportador.exportar(proyecto, proyecto.presupuesto);
   }, []);
 
   const exportarExcel = useCallback(async (id: string): Promise<void> => {

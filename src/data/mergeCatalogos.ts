@@ -1,0 +1,4 @@
+import { INITIAL_PRODUCTS, INITIAL_PRICES } from './initialData';
+
+export const CATALOGO_COMPLETO = INITIAL_PRODUCTS;
+export const PRECIOS_COMPLETOS = INITIAL_PRICES;

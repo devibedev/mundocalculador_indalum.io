@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Product, PriceData, CartItem, Project, AppNote, INITIAL_PRODUCTS, INITIAL_PRICES, CalculationHistory } from '../data/initialData';
+import { Product, PriceData, CartItem, Project, AppNote, CalculationHistory } from '../data/initialData';
+import { CATALOGO_COMPLETO, PRECIOS_COMPLETOS } from '../data/mergeCatalogos';
 import { calcularDespiece, CalculationResult } from '../lib/calculationLogic';
 import { auth, db, googleProvider, handleFirestoreError, OperationType, testConnection } from '../lib/firebase';
 import { onAuthStateChanged, signInWithPopup, signOut, User } from 'firebase/auth';
@@ -46,7 +47,7 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [prices, setPrices] = useState<Record<string, PriceData>>(INITIAL_PRICES);
+  const [prices, setPrices] = useState<Record<string, PriceData>>(PRECIOS_COMPLETOS);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [notes, setNotes] = useState<AppNote[]>([]);
@@ -184,7 +185,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       snapshot.forEach(doc => {
         overrides[doc.id] = doc.data() as PriceData;
       });
-      setPrices({ ...INITIAL_PRICES, ...overrides });
+      setPrices({ ...PRECIOS_COMPLETOS, ...overrides });
     }, (err) => handleFirestoreError(err, OperationType.LIST, `users/${userId}/prices`));
 
     // Listen to Projects
@@ -273,7 +274,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const addToCart = async (item: Partial<CartItem>) => {
-    const product = INITIAL_PRODUCTS.find(p => p.codigo === item.codigo);
+    const product = CATALOGO_COMPLETO.find(p => p.codigo === item.codigo);
     const priceInfo = prices[item.codigo || ''] || { unitPrice: 0, type: 'unit' };
 
     const isHerraje = product?.tipo === 'herraje' || item.tipo === 'herraje' || item.codigo === 'HARDWARE';
@@ -429,7 +430,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   return (
     <AppContext.Provider value={{
-      products: INITIAL_PRODUCTS,
+      products: CATALOGO_COMPLETO,
       prices,
       cart,
       projects,

@@ -78,6 +78,7 @@ export interface Proyecto {
   descuento: number;
   iva: number;
   notas?: string;
+  presupuesto?: Presupuesto;
   createdAt: string;
   updatedAt: string;
   estado: 'borrador' | 'en_proceso' | 'finalizado' | 'enviado';

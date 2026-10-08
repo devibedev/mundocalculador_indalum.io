@@ -46,6 +46,7 @@ import { useLinea } from './contexts/LineaContext';
 import { useProyecto } from './contexts/ProyectoContext';
 import { BotonesExportacion } from './components/exportacion/BotonesExportacion';
 import { ProyectoSelector } from './components/proyecto/ProyectoSelector';
+import Calculadora2500 from './components/Calculadora2500';
 
 type ViewType = 'catalog' | 'calculator' | 'materials' | 'prices' | 'notes' | 'projects';
 
@@ -322,7 +323,9 @@ const CatalogView = () => {
                   <p className="text-[10px] opacity-60 uppercase">{p.nombre}</p>
                 </div>
                 <div className="text-right flex flex-col items-end">
-                  <div className="text-[10px] font-bold border border-primary px-1 mb-1">PÁG {p.pagina}</div>
+                  {p.pagina !== undefined && (
+                    <div className="text-[10px] font-bold border border-primary px-1 mb-1">PÁG {p.pagina}</div>
+                  )}
                   {isExpanded && (
                     <motion.div 
                       initial={{ opacity: 0, scale: 0.8 }}
@@ -427,6 +430,7 @@ const CalculatorView = () => {
   // Hardware specific state
   const [selectedHerraje, setSelectedHerraje] = useState('');
   const [herrajeCant, setHerrajeCant] = useState('1');
+  const [modoCalculadora, setModoCalculadora] = useState<'nueva' | 'legacy'>('nueva');
   
   const validateInput = (name: 'width' | 'height' | 'serie' | 'selloAgua', value: string, currentWidth?: string, currentHeight?: string) => {
     if (name === 'serie') {
@@ -633,267 +637,303 @@ const CalculatorView = () => {
 
   return (
     <div className="space-y-6">
-      <div className="print:hidden">
-        <div className="sketch-border p-5 bg-white space-y-6 relative overflow-hidden">
-          {/* Tech Decor for Calculator */}
-          <div className="absolute top-0 right-0 p-4 opacity-[0.1] -rotate-12 translate-x-4">
-            <Calculator size={80} />
-          </div>
-
-          <div className="relative z-10">
-            <h2 className="font-bold text-sm border-b border-primary pb-1 inline-block uppercase tracking-widest">// CÁLCULO TÉCNICO (MundoCanceles)</h2>
-            <p className="text-[9px] opacity-40 font-mono mt-1 px-1 bg-primary/5">SISTEMA DINÁMICO DE DESCUENTOS Y DESPIECE ARQUITECTÓNICO</p>
-          </div>
-          
-          <div className="flex justify-end">
-            <button 
-              onClick={cargarEjemploMundoCanceles}
-              className="text-[10px] border border-primary/30 px-2 py-1 hover:bg-primary/5"
-            >
-              ⚡ Cargar ejemplo MundoCanceles
-            </button>
-          </div>
-          
-          {despiece.alertas.length > 0 && (
-            <div className="space-y-1">
-              {despiece.alertas.map((a, i) => (
-                <div key={i} className="bg-red-50 text-red-600 p-2 text-[10px] font-bold border border-red-200 uppercase flex items-center gap-2">
-                  <AlertTriangle size={12} /> {a}
-                </div>
-              ))}
-            </div>
-          )}
-
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-6 p-4 bg-primary/5 border border-primary/10 relative">
-              <div className="space-y-4">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-[8px] font-black opacity-30 font-mono">01</span>
-                  <h3 className="text-[8px] font-black opacity-40 uppercase tracking-[0.2em]">CONFIGURACIÓN</h3>
-                </div>
-                <div className="space-y-3">
-                  <div>
-                    <label className="text-[9px] font-bold uppercase block mb-1 opacity-60">Serie de Perfil</label>
-                    <select 
-                      className={`sketch-input w-full py-1.5 text-xs ${inputErrors.serie ? 'border-red-500' : ''}`} 
-                      value={serie} 
-                      onChange={handleSerieChange}
-                    >
-                      <option value="">-- SELECCIONE --</option>
-                      <option value="2500">Euroalum 2500</option>
-                      <option value="2800">Euroalum 2800</option>
-                      <option value="3500">Euroalum 3500</option>
-                      <option value="3800">Euroalum 3800</option>
-                      <option value="4000">Euroalum 4000</option>
-                      <option value="4500">Euroalum 4500</option>
-                    </select>
-                    {inputErrors.serie && <span className="text-[8px] text-red-600 font-bold block mt-1">{inputErrors.serie}</span>}
-                  </div>
-                  <div>
-                    <label className="text-[9px] font-bold uppercase block mb-1 opacity-60">Operación</label>
-                    <select className="sketch-input w-full py-1.5 text-xs" value={config} onChange={e => setConfig(e.target.value)}>
-                      <option value="X-O">Corrediza X-O</option>
-                      <option value="FIX">Fija</option>
-                      <option value="BATIENTE">Ventana Batiente / Abatible</option>
-                      <option value="PROYECCION">Ventana Proyección c/ Mosq.</option>
-                      <option value="PUERTA">Puerta Comercial</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-[8px] font-black opacity-30 font-mono">02</span>
-                  <h3 className="text-[8px] font-black opacity-40 uppercase tracking-[0.2em]">ESPECIFICACIONES</h3>
-                </div>
-                <div className="space-y-3">
-                  <div>
-                    <label className="text-[9px] font-bold uppercase block mb-1 opacity-60">Ancho (mm)</label>
-                    <input 
-                      type="number" 
-                      className={`sketch-input w-full py-1.5 text-sm font-mono text-center ${inputErrors.width ? 'border-red-500' : ''}`} 
-                      placeholder="WIDTH" 
-                      value={width} 
-                      onChange={handleWidthChange} 
-                    />
-                    {inputErrors.width && <span className="text-[8px] text-red-600 font-bold block mt-1">{inputErrors.width}</span>}
-                  </div>
-                  <div>
-                    <label className="text-[9px] font-bold uppercase block mb-1 opacity-60">Alto (mm)</label>
-                    <input 
-                      type="number" 
-                      className={`sketch-input w-full py-1.5 text-sm font-mono text-center ${inputErrors.height ? 'border-red-500' : ''}`} 
-                      placeholder="HEIGHT" 
-                      value={height} 
-                      onChange={handleHeightChange} 
-                    />
-                    {inputErrors.height && <span className="text-[8px] text-red-600 font-bold block mt-1">{inputErrors.height}</span>}
-                  </div>
-                  <div>
-                    <label className="text-[9px] font-bold uppercase block mb-1 opacity-60">Sello de Agua (mm)</label>
-                    <input 
-                      type="number" 
-                      className={`sketch-input w-full py-1.5 text-sm font-mono text-center ${inputErrors.selloAgua ? 'border-red-500' : ''}`} 
-                      placeholder="SELLO" 
-                      value={selloAgua} 
-                      onChange={handleSelloChange} 
-                    />
-                    {inputErrors.selloAgua && <span className="text-[8px] text-red-600 font-bold block mt-1">{inputErrors.selloAgua}</span>}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <button 
-              disabled={despiece.alertas.length > 0 || !width || !height || !serie || Object.keys(inputErrors).length > 0}
-              onClick={handleAddFull}
-              className={`sketch-btn w-full bg-primary text-white flex items-center justify-center gap-3 py-3 ${despiece.alertas.length > 0 || !serie || Object.keys(inputErrors).length > 0 ? 'opacity-30 cursor-not-allowed' : 'hover:bg-primary/90'}`}
-            >
-              <Calculator size={18} /> 
-              <span className="tracking-widest">GENERAR INGENIERÍA Y AGREGAR</span>
-            </button>
-          </div>
+      {/* 🆕 SELECTOR DE MODO DE CALCULADORA */}
+      <div className="sketch-border p-4 bg-white/50 space-y-3">
+        <div className="text-[10px] font-bold uppercase opacity-60 flex items-center gap-2">
+          <Calculator size={14} /> Modo de Cálculo
         </div>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setModoCalculadora('nueva')}
+            className={`flex-1 py-2 text-[10px] font-bold uppercase border border-primary transition-all ${
+              modoCalculadora === 'nueva' ? 'bg-primary text-white' : 'bg-transparent'
+            }`}
+          >
+            🆕 Serie 2500 (Paramétrica)
+          </button>
+          <button
+            onClick={() => setModoCalculadora('legacy')}
+            className={`flex-1 py-2 text-[10px] font-bold uppercase border border-primary transition-all ${
+              modoCalculadora === 'legacy' ? 'bg-primary text-white' : 'bg-transparent'
+            }`}
+          >
+            ⚙️ Sistema Clásico
+          </button>
+        </div>
+      </div>
 
-        {width && height && !Object.keys(inputErrors).length && (
-          <div className="space-y-4">
-            <motion.div 
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="sketch-border p-6 bg-white overflow-hidden"
-            >
-              <div className="flex items-center gap-2 mb-4 border-b border-primary/10 pb-2">
-                <Square size={14} className="opacity-40" />
-                <h3 className="text-[10px] font-black uppercase tracking-widest">Vista Previa Estructural</h3>
-              </div>
-              
-              <div className="flex items-center justify-center min-h-[300px] relative bg-primary/5 border border-primary/5 py-8">
-                <div className="absolute inset-0 blueprint-grid opacity-[0.05]" />
-                <div className="relative border-2 border-primary/40 flex items-center justify-center bg-white/50" style={{ 
-                  width: Math.min(240, parseFloat(width) / 8), 
-                  height: Math.min(240, parseFloat(height) / 8),
-                  aspectRatio: `${width}/${height}` 
-                }}>
-                  {config === 'X-O' && (
-                    <div className="absolute inset-0 flex">
-                      <div className="w-1/2 border-r border-primary/20 flex items-center justify-center">
-                        <div className="w-3 h-3 rounded-full border border-primary/20" />
-                        <span className="text-[8px] absolute top-2 left-2 opacity-30 font-bold">X</span>
-                      </div>
-                      <div className="w-1/2 flex items-center justify-center">
-                        <span className="text-[8px] absolute top-2 right-2 opacity-30 font-bold">O</span>
-                      </div>
-                    </div>
-                  )}
-                  <div className="absolute -top-6 left-0 right-0 text-center text-[10px] font-mono font-bold text-primary">
-                    {width}mm
-                  </div>
-                  <div className="absolute -left-12 top-0 bottom-0 flex items-center justify-center text-[10px] font-mono font-bold [writing-mode:vertical-rl] rotate-180 text-primary">
-                    {height}mm
-                  </div>
-                </div>
-              </div>
-            </motion.div>
+      {/* 🆕 CALCULADORA SERIE 2500 (NUEVA) */}
+      {modoCalculadora === 'nueva' && (
+        <Calculadora2500
+          onAddToCart={(items) => {
+            items.forEach(item => addToCart(item));
+          }}
+        />
+      )}
 
-            {despiece.perfiles.length > 0 && (
-              <motion.div 
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="sketch-border p-4 bg-white/80 space-y-3"
+      {/* CALCULADORA CLÁSICA (EXISTENTE) */}
+      {modoCalculadora === 'legacy' && (
+        <div className="print:hidden space-y-6">
+          <div className="sketch-border p-5 bg-white space-y-6 relative overflow-hidden">
+            {/* Tech Decor for Calculator */}
+            <div className="absolute top-0 right-0 p-4 opacity-[0.1] -rotate-12 translate-x-4">
+              <Calculator size={80} />
+            </div>
+
+            <div className="relative z-10">
+              <h2 className="font-bold text-sm border-b border-primary pb-1 inline-block uppercase tracking-widest">// CÁLCULO TÉCNICO (MundoCanceles)</h2>
+              <p className="text-[9px] opacity-40 font-mono mt-1 px-1 bg-primary/5">SISTEMA DINÁMICO DE DESCUENTOS Y DESPIECE ARQUITECTÓNICO</p>
+            </div>
+
+            <div className="flex justify-end">
+              <button
+                onClick={cargarEjemploMundoCanceles}
+                className="text-[10px] border border-primary/30 px-2 py-1 hover:bg-primary/5"
               >
-                <div className="text-[9px] font-bold opacity-40 border-b border-primary/10 pb-1 uppercase tracking-widest">// DESGLOSE DE CORTES ESTIMADOS</div>
-                <div className="grid grid-cols-1 gap-1">
-                  {despiece.perfiles.map((p, i) => (
-                    <div key={i} className="flex justify-between text-[10px] font-mono p-1 hover:bg-primary/5">
-                      <span className="opacity-60">{p.descripcion}</span>
-                      <span className="font-bold">{p.cantidad}pz x {p.longitud.toFixed(0)}mm</span>
-                    </div>
-                  ))}
-                  <div className="pt-2 mt-2 border-t border-primary/10 flex justify-between text-[10px] font-bold text-primary">
-                    <span className="uppercase tracking-tighter">ÁREA VIDRIO (APROX)</span>
-                    <span className="font-mono">{despiece.vidrio.ancho.toFixed(0)} x {despiece.vidrio.alto.toFixed(0)} mm</span>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </div>
-        )}
+                ⚡ Cargar ejemplo MundoCanceles
+              </button>
+            </div>
 
-        {/* Manual Hardware Section - Separated */}
-        <div className="sketch-border p-5 bg-zinc-50 dark:bg-white/5 space-y-4">
-          <div className="flex items-center gap-2 border-b border-primary/10 pb-2">
-            <Plus size={14} className="opacity-40" />
-            <h3 className="text-[10px] font-black uppercase tracking-widest">Adición de Herraje Manual</h3>
-          </div>
-          
-          <div className="grid grid-cols-5 gap-3 items-end">
-            <div className="col-span-3">
-              <label className="text-[9px] font-bold uppercase block mb-1 opacity-60">Seleccionar Herraje</label>
-              <select 
-                className="sketch-input w-full py-1.5 text-xs bg-white dark:bg-black/20" 
-                value={selectedHerraje} 
-                onChange={e => setSelectedHerraje(e.target.value)}
-              >
-                <option value="">-- BUSCAR HERRAJE --</option>
-                {products.filter(p => p.tipo === 'herraje').map(p => (
-                  <option key={p.codigo} value={p.codigo}>{p.codigo} - {p.nombre}</option>
+            {despiece.alertas.length > 0 && (
+              <div className="space-y-1">
+                {despiece.alertas.map((a, i) => (
+                  <div key={i} className="bg-red-50 text-red-600 p-2 text-[10px] font-bold border border-red-200 uppercase flex items-center gap-2">
+                    <AlertTriangle size={12} /> {a}
+                  </div>
                 ))}
-              </select>
-            </div>
-            <div className="col-span-1">
-              <label className="text-[9px] font-bold uppercase block mb-1 opacity-60">Cant.</label>
-              <input 
-                type="number" 
-                className="sketch-input w-full py-1.5 text-center text-xs bg-white dark:bg-black/20" 
-                min="1" 
-                value={herrajeCant} 
-                onChange={e => setHerrajeCant(e.target.value)} 
-              />
-            </div>
-            <div className="col-span-1">
-              <button 
-                disabled={!selectedHerraje}
-                onClick={() => {
-                  addToCart({ codigo: selectedHerraje, cantidad: parseInt(herrajeCant) || 1 });
-                  setSelectedHerraje('');
-                  setHerrajeCant('1');
-                }}
-                className={`sketch-btn w-full py-1.5 bg-primary text-white flex items-center justify-center ${!selectedHerraje ? 'opacity-30' : 'hover:scale-[1.02]'}`}
+              </div>
+            )}
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-6 p-4 bg-primary/5 border border-primary/10 relative">
+                <div className="space-y-4">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-[8px] font-black opacity-30 font-mono">01</span>
+                    <h3 className="text-[8px] font-black opacity-40 uppercase tracking-[0.2em]">CONFIGURACIÓN</h3>
+                  </div>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-[9px] font-bold uppercase block mb-1 opacity-60">Serie de Perfil</label>
+                      <select
+                        className={`sketch-input w-full py-1.5 text-xs ${inputErrors.serie ? 'border-red-500' : ''}`}
+                        value={serie}
+                        onChange={handleSerieChange}
+                      >
+                        <option value="">-- SELECCIONE --</option>
+                        <option value="2500">Euroalum 2500</option>
+                        <option value="2800">Euroalum 2800</option>
+                        <option value="3500">Euroalum 3500</option>
+                        <option value="3800">Euroalum 3800</option>
+                        <option value="4000">Euroalum 4000</option>
+                        <option value="4500">Euroalum 4500</option>
+                      </select>
+                      {inputErrors.serie && <span className="text-[8px] text-red-600 font-bold block mt-1">{inputErrors.serie}</span>}
+                    </div>
+                    <div>
+                      <label className="text-[9px] font-bold uppercase block mb-1 opacity-60">Operación</label>
+                      <select className="sketch-input w-full py-1.5 text-xs" value={config} onChange={e => setConfig(e.target.value)}>
+                        <option value="X-O">Corrediza X-O</option>
+                        <option value="FIX">Fija</option>
+                        <option value="BATIENTE">Ventana Batiente / Abatible</option>
+                        <option value="PROYECCION">Ventana Proyección c/ Mosq.</option>
+                        <option value="PUERTA">Puerta Comercial</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-[8px] font-black opacity-30 font-mono">02</span>
+                    <h3 className="text-[8px] font-black opacity-40 uppercase tracking-[0.2em]">ESPECIFICACIONES</h3>
+                  </div>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-[9px] font-bold uppercase block mb-1 opacity-60">Ancho (mm)</label>
+                      <input
+                        type="number"
+                        className={`sketch-input w-full py-1.5 text-sm font-mono text-center ${inputErrors.width ? 'border-red-500' : ''}`}
+                        placeholder="WIDTH"
+                        value={width}
+                        onChange={handleWidthChange}
+                      />
+                      {inputErrors.width && <span className="text-[8px] text-red-600 font-bold block mt-1">{inputErrors.width}</span>}
+                    </div>
+                    <div>
+                      <label className="text-[9px] font-bold uppercase block mb-1 opacity-60">Alto (mm)</label>
+                      <input
+                        type="number"
+                        className={`sketch-input w-full py-1.5 text-sm font-mono text-center ${inputErrors.height ? 'border-red-500' : ''}`}
+                        placeholder="HEIGHT"
+                        value={height}
+                        onChange={handleHeightChange}
+                      />
+                      {inputErrors.height && <span className="text-[8px] text-red-600 font-bold block mt-1">{inputErrors.height}</span>}
+                    </div>
+                    <div>
+                      <label className="text-[9px] font-bold uppercase block mb-1 opacity-60">Sello de Agua (mm)</label>
+                      <input
+                        type="number"
+                        className={`sketch-input w-full py-1.5 text-sm font-mono text-center ${inputErrors.selloAgua ? 'border-red-500' : ''}`}
+                        placeholder="SELLO"
+                        value={selloAgua}
+                        onChange={handleSelloChange}
+                      />
+                      {inputErrors.selloAgua && <span className="text-[8px] text-red-600 font-bold block mt-1">{inputErrors.selloAgua}</span>}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                disabled={despiece.alertas.length > 0 || !width || !height || !serie || Object.keys(inputErrors).length > 0}
+                onClick={handleAddFull}
+                className={`sketch-btn w-full bg-primary text-white flex items-center justify-center gap-3 py-3 ${despiece.alertas.length > 0 || !serie || Object.keys(inputErrors).length > 0 ? 'opacity-30 cursor-not-allowed' : 'hover:bg-primary/90'}`}
               >
-                <Plus size={18} />
+                <Calculator size={18} />
+                <span className="tracking-widest">GENERAR INGENIERÍA Y AGREGAR</span>
               </button>
             </div>
           </div>
-          <p className="text-[8px] opacity-40 italic mt-1 font-mono uppercase tracking-tighter">
-            * Use esta sección para agregar elementos adicionales que no forman parte del despiece automático.
-          </p>
-        </div>
 
-
-        {/* CÁLCULO HISTORY SECTION */}
-        <div className="sketch-border p-4 bg-white/40 space-y-3 mt-4">
-          <div className="flex items-center gap-2 border-b border-primary/10 pb-1">
-            <History size={14} className="opacity-40" />
-            <h3 className="text-[10px] font-bold uppercase tracking-widest">Últimos Cálculos</h3>
-          </div>
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-            {history.map(entry => (
-              <div 
-                key={entry.id} 
-                onClick={() => reuseHistory(entry)}
-                className="shrink-0 w-32 p-2 bg-white border border-primary/20 sketch-border cursor-pointer hover:bg-primary/5 transition-colors"
+          {width && height && !Object.keys(inputErrors).length && (
+            <div className="space-y-4">
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="sketch-border p-6 bg-white overflow-hidden"
               >
-                <div className="text-[8px] font-bold opacity-30">{new Date(entry.fecha).toLocaleDateString()}</div>
-                <div className="text-[9px] font-bold truncate">SERIE {entry.serie}</div>
-                <div className="text-[9px] font-mono">{entry.width}x{entry.height}</div>
-                <div className="text-[7px] uppercase mt-1 opacity-60">REUTILIZAR</div>
+                <div className="flex items-center gap-2 mb-4 border-b border-primary/10 pb-2">
+                  <Square size={14} className="opacity-40" />
+                  <h3 className="text-[10px] font-black uppercase tracking-widest">Vista Previa Estructural</h3>
+                </div>
+
+                <div className="flex items-center justify-center min-h-[300px] relative bg-primary/5 border border-primary/5 py-8">
+                  <div className="absolute inset-0 blueprint-grid opacity-[0.05]" />
+                  <div className="relative border-2 border-primary/40 flex items-center justify-center bg-white/50" style={{
+                    width: Math.min(240, parseFloat(width) / 8),
+                    height: Math.min(240, parseFloat(height) / 8),
+                    aspectRatio: `${width}/${height}`
+                  }}>
+                    {config === 'X-O' && (
+                      <div className="absolute inset-0 flex">
+                        <div className="w-1/2 border-r border-primary/20 flex items-center justify-center">
+                          <div className="w-3 h-3 rounded-full border border-primary/20" />
+                          <span className="text-[8px] absolute top-2 left-2 opacity-30 font-bold">X</span>
+                        </div>
+                        <div className="w-1/2 flex items-center justify-center">
+                          <span className="text-[8px] absolute top-2 right-2 opacity-30 font-bold">O</span>
+                        </div>
+                      </div>
+                    )}
+                    <div className="absolute -top-6 left-0 right-0 text-center text-[10px] font-mono font-bold text-primary">
+                      {width}mm
+                    </div>
+                    <div className="absolute -left-12 top-0 bottom-0 flex items-center justify-center text-[10px] font-mono font-bold [writing-mode:vertical-rl] rotate-180 text-primary">
+                      {height}mm
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+
+              {despiece.perfiles.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="sketch-border p-4 bg-white/80 space-y-3"
+                >
+                  <div className="text-[9px] font-bold opacity-40 border-b border-primary/10 pb-1 uppercase tracking-widest">// DESGLOSE DE CORTES ESTIMADOS</div>
+                  <div className="grid grid-cols-1 gap-1">
+                    {despiece.perfiles.map((p, i) => (
+                      <div key={i} className="flex justify-between text-[10px] font-mono p-1 hover:bg-primary/5">
+                        <span className="opacity-60">{p.descripcion}</span>
+                        <span className="font-bold">{p.cantidad}pz x {p.longitud.toFixed(0)}mm</span>
+                      </div>
+                    ))}
+                    <div className="pt-2 mt-2 border-t border-primary/10 flex justify-between text-[10px] font-bold text-primary">
+                      <span className="uppercase tracking-tighter">ÁREA VIDRIO (APROX)</span>
+                      <span className="font-mono">{despiece.vidrio.ancho.toFixed(0)} x {despiece.vidrio.alto.toFixed(0)} mm</span>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </div>
+          )}
+
+          {/* Manual Hardware Section - Separated */}
+          <div className="sketch-border p-5 bg-zinc-50 dark:bg-white/5 space-y-4">
+            <div className="flex items-center gap-2 border-b border-primary/10 pb-2">
+              <Plus size={14} className="opacity-40" />
+              <h3 className="text-[10px] font-black uppercase tracking-widest">Adición de Herraje Manual</h3>
+            </div>
+
+            <div className="grid grid-cols-5 gap-3 items-end">
+              <div className="col-span-3">
+                <label className="text-[9px] font-bold uppercase block mb-1 opacity-60">Seleccionar Herraje</label>
+                <select
+                  className="sketch-input w-full py-1.5 text-xs bg-white dark:bg-black/20"
+                  value={selectedHerraje}
+                  onChange={e => setSelectedHerraje(e.target.value)}
+                >
+                  <option value="">-- BUSCAR HERRAJE --</option>
+                  {products.filter(p => p.tipo === 'herraje').map(p => (
+                    <option key={p.codigo} value={p.codigo}>{p.codigo} - {p.nombre}</option>
+                  ))}
+                </select>
               </div>
-            ))}
-            {history.length === 0 && <div className="text-[9px] opacity-30 italic py-2">Sin historial de cálculos</div>}
+              <div className="col-span-1">
+                <label className="text-[9px] font-bold uppercase block mb-1 opacity-60">Cant.</label>
+                <input
+                  type="number"
+                  className="sketch-input w-full py-1.5 text-center text-xs bg-white dark:bg-black/20"
+                  min="1"
+                  value={herrajeCant}
+                  onChange={e => setHerrajeCant(e.target.value)}
+                />
+              </div>
+              <div className="col-span-1">
+                <button
+                  disabled={!selectedHerraje}
+                  onClick={() => {
+                    addToCart({ codigo: selectedHerraje, cantidad: parseInt(herrajeCant) || 1 });
+                    setSelectedHerraje('');
+                    setHerrajeCant('1');
+                  }}
+                  className={`sketch-btn w-full py-1.5 bg-primary text-white flex items-center justify-center ${!selectedHerraje ? 'opacity-30' : 'hover:scale-[1.02]'}`}
+                >
+                  <Plus size={18} />
+                </button>
+              </div>
+            </div>
+            <p className="text-[8px] opacity-40 italic mt-1 font-mono uppercase tracking-tighter">
+              * Use esta sección para agregar elementos adicionales que no forman parte del despiece automático.
+            </p>
+          </div>
+
+          {/* CÁLCULO HISTORY SECTION */}
+          <div className="sketch-border p-4 bg-white/40 space-y-3 mt-4">
+            <div className="flex items-center gap-2 border-b border-primary/10 pb-1">
+              <History size={14} className="opacity-40" />
+              <h3 className="text-[10px] font-bold uppercase tracking-widest">Últimos Cálculos</h3>
+            </div>
+            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+              {history.map(entry => (
+                <div
+                  key={entry.id}
+                  onClick={() => reuseHistory(entry)}
+                  className="shrink-0 w-32 p-2 bg-white border border-primary/20 sketch-border cursor-pointer hover:bg-primary/5 transition-colors"
+                >
+                  <div className="text-[8px] font-bold opacity-30">{new Date(entry.fecha).toLocaleDateString()}</div>
+                  <div className="text-[9px] font-bold truncate">SERIE {entry.serie}</div>
+                  <div className="text-[9px] font-mono">{entry.width}x{entry.height}</div>
+                  <div className="text-[7px] uppercase mt-1 opacity-60">REUTILIZAR</div>
+                </div>
+              ))}
+              {history.length === 0 && <div className="text-[9px] opacity-30 italic py-2">Sin historial de cálculos</div>}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       <div className="sketch-border p-5 bg-white space-y-4 shadow-lg">
         <h2 className="font-bold text-sm border-b border-primary pb-1 inline-block uppercase tracking-widest">// DESPIECE ACTUAL</h2>
