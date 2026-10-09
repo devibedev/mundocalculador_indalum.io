@@ -43,6 +43,7 @@ export function calcularDespiece(
     return {
       clave: fc.perfil.clave,
       descripcion: fc.perfil.descripcion,
+      svgPath: fc.perfil.svgPath,
       cantidad: fc.cantidad,
       medidaCorte,
       tipoCorte: fc.tipoCorte,

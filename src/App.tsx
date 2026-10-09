@@ -356,7 +356,7 @@ const CatalogView = () => {
                           <img 
                             src={p.imagen} 
                             alt={p.nombre}
-                            className="max-w-full max-h-full object-contain mix-blend-multiply"
+                            className="max-w-full max-h-full object-contain dark:invert"
                             referrerPolicy="no-referrer"
                           />
                         </div>

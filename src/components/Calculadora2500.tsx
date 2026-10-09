@@ -124,11 +124,11 @@ export default function Calculadora2500({ onAddToCart }: Calculadora2500Props) {
             {resultado.piezasCorte.map((p, idx) => (
               <div key={idx} className="flex justify-between items-center p-2 bg-white/50 border border-primary/10">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gray-200 rounded flex items-center justify-center">
-                    <svg viewBox="0 0 50 50" className="w-8 h-8 text-blue-800 fill-current">
-                      <path d={p.descripcion.includes('Marco') ? "M10,10 L40,10 L40,40 L10,40 Z" :
+                  <div className="w-10 h-10 bg-gray-200 dark:bg-zinc-700 rounded flex items-center justify-center shrink-0 border border-primary/20">
+                    <svg viewBox="0 0 50 50" className="w-8 h-8 text-blue-800 dark:text-blue-400 fill-current stroke-current stroke-1">
+                      <path d={p.svgPath || (p.descripcion.includes('Marco') ? "M10,10 L40,10 L40,40 L10,40 Z" :
                                p.descripcion.includes('Hoja') ? "M15,15 L35,15 L35,35 L15,35 Z" :
-                               "M20,20 L30,20 L30,25 L20,25 Z"} />
+                               "M20,20 L30,20 L30,25 L20,25 Z")} />
                     </svg>
                   </div>
                   <div>

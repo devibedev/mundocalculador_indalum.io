@@ -51,6 +51,7 @@ export interface ResultadoCalculo {
   piezasCorte: {
     clave: string;
     descripcion: string;
+    svgPath?: string;
     cantidad: number;
     medidaCorte: number; // En mm
     tipoCorte: TipoCorte;
